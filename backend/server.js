@@ -14,8 +14,17 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://vig-psi.vercel.app'
+];
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 // Important: Stripe webhook needs raw body. Mount that route before JSON parser in payments router.
 app.use('/api/payments', require('./routes/payments'));
 app.use(express.json());
@@ -56,10 +65,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://vig-psi.vercel.app'
-];
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 }); 
