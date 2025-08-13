@@ -10,7 +10,7 @@ const POINT_PACKS = {
   200: 2999  // $29.99 for 200 points
 };
 
-const getFrontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:3000';
+const getFrontendUrl = () => process.env.FRONTEND_URL || 'https://vig-psi.vercel.app';
 
 // Create a Stripe Checkout session for buying points
 const createCheckoutSession = async (req, res) => {

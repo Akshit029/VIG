@@ -105,7 +105,7 @@ In development, the email service logs to console instead of sending actual emai
 ### Environment Variables
 The following environment variables can be configured:
 
-- `FRONTEND_URL`: Frontend URL for reset links (defaults to `http://localhost:3000`)
+- `FRONTEND_URL`: Frontend URL for reset links (defaults to `https://vig-psi.vercel.app`)
 - `NODE_ENV`: Environment mode (development/production)
 
 ### Testing

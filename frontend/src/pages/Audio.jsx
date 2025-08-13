@@ -49,7 +49,7 @@ export default function AudioGenerator() {
     try {
       const response = await audioService.generateTTS(text, selectedVoice)
       // Convert relative URL to full URL for download
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5001'
+      const baseURL = process.env.REACT_APP_API_URL || 'https://vig-wzt4.onrender.com'
       
       const fullDownloadURL = response.audio.downloadUrl.startsWith('http') 
         ? response.audio.downloadUrl 

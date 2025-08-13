@@ -84,7 +84,7 @@ export default function Caption() {
       
       const token = localStorage.getItem('token')
       
-      const response = await fetch('http://localhost:5001/api/caption/generate', {
+      const response = await fetch('https://vig-wzt4.onrender.com/api/caption/generate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -140,7 +140,7 @@ export default function Caption() {
       
       const token = localStorage.getItem('token')
       
-      const response = await fetch('http://localhost:5001/api/caption/generate-video', {
+      const response = await fetch('https://vig-wzt4.onrender.com/api/caption/generate-video', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
