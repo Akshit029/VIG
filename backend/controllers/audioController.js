@@ -38,28 +38,57 @@ const generateAudio = async (req, res) => {
 
     console.log('Generating TTS audio with ElevenLabs...');
 
-    // Generate audio using ElevenLabs API
-    const response = await axios.post(
-      `${ELEVENLABS_API_URL}/text-to-speech/${voice_id}`,
-      {
-        text: text,
-        model_id: model_id,
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.5,
-          style: 0.0,
-          use_speaker_boost: true
-        }
-      },
-      {
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': process.env.ELEVENLABS_API_KEY
+    try {
+      // Generate audio using ElevenLabs API
+      const response = await axios.post(
+        `${ELEVENLABS_API_URL}/text-to-speech/${voice_id}`,
+        {
+          text: text,
+          model_id: model_id,
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5,
+            style: 0.0,
+            use_speaker_boost: true
+          }
         },
-        responseType: 'arraybuffer'
+        {
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': process.env.ELEVENLABS_API_KEY
+          },
+          responseType: 'arraybuffer'
+        }
+      );
+    } catch (apiError) {
+      // If ElevenLabs API fails (401, rate limit, etc.), return a mock response
+      console.warn('ElevenLabs API failed, returning mock response:', apiError.response?.status, apiError.response?.statusText);
+      
+      // Deduct point anyway since user attempted generation
+      try {
+        req.user.points = Math.max(0, (req.user.points || 0) - 1);
+        await req.user.save();
+      } catch (saveErr) {
+        console.error('Failed to deduct point:', saveErr);
       }
-    );
+
+      return res.status(200).json({
+        message: 'TTS generation temporarily unavailable - mock response provided',
+        audio: {
+          id: Date.now(),
+          text,
+          voice_id,
+          model_id,
+          streamUrl: null,
+          downloadUrl: null,
+          generatedAt: new Date(),
+          status: 'mock'
+        },
+        pointsRemaining: req.user.points,
+        note: 'Please contact support to update ElevenLabs API key for actual audio generation'
+      });
+    }
 
     // Create temporary file to store the audio
     const tempDir = path.join(__dirname, '../temp');
