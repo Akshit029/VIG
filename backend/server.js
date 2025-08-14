@@ -20,6 +20,10 @@ const allowedOrigins = [
   'https://vig-psi.vercel.app'
 ];
 
+// Add deployed backend URL to allowedOrigins
+allowedOrigins.push('https://vig-wzt4.onrender.com');
+
+
 // Middleware
 app.use(cors({
   origin: allowedOrigins,
@@ -37,6 +41,8 @@ if (process.env.NODE_ENV === 'development') {
     next();
   });
 }
+
+
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vig')
@@ -64,7 +70,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 }); 
+
