@@ -62,31 +62,13 @@ const generateAudio = async (req, res) => {
         }
       );
     } catch (apiError) {
-      // If ElevenLabs API fails (401, rate limit, etc.), return a mock response
-      console.warn('ElevenLabs API failed, returning mock response:', apiError.response?.status, apiError.response?.statusText);
+      // If ElevenLabs API fails (401, rate limit, etc.), return error without deducting credits
+      console.warn('ElevenLabs API failed:', apiError.response?.status, apiError.response?.statusText);
       
-      // Deduct point anyway since user attempted generation
-      try {
-        req.user.points = Math.max(0, (req.user.points || 0) - 1);
-        await req.user.save();
-      } catch (saveErr) {
-        console.error('Failed to deduct point:', saveErr);
-      }
-
-      return res.status(200).json({
-        message: 'TTS generation temporarily unavailable - mock response provided',
-        audio: {
-          id: Date.now(),
-          text,
-          voice_id,
-          model_id,
-          streamUrl: null,
-          downloadUrl: null,
-          generatedAt: new Date(),
-          status: 'mock'
-        },
-        pointsRemaining: req.user.points,
-        note: 'Please contact support to update ElevenLabs API key for actual audio generation'
+      return res.status(503).json({
+        message: 'TTS service temporarily unavailable. Please try again later or contact support.',
+        error: 'ElevenLabs API key needs to be updated',
+        pointsRemaining: req.user.points
       });
     }
 
