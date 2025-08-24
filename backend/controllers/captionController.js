@@ -153,7 +153,6 @@ const generateVideoWithCaptions = async (req, res) => {
     }
 
     const inputVideoPath = path.join(tempDir, `input_${Date.now()}.mp4`);
-    const outputVideoPath = path.join(tempDir, `output_${Date.now()}.mp4`);
     const subtitlePath = path.join(tempDir, `subtitles_${Date.now()}.srt`);
 
     // Write video buffer to temp file
@@ -218,13 +217,18 @@ const generateVideoWithCaptions = async (req, res) => {
     // Write SRT file
     fs.writeFileSync(subtitlePath, srtContent);
 
-    // Generate video with burned-in subtitles using FFmpeg
+    // Stream the output video directly to the client to avoid buffering and timeouts
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Disposition', 'attachment; filename="video_with_captions.mp4"');
+    // Hint to proxies that we'll stream
+    res.setHeader('Transfer-Encoding', 'chunked');
+
     await new Promise((resolve, reject) => {
-      const positionY = options.position === 'top' ? 50 : 
-                       options.position === 'center' ? '(h-text_h)/2' : 
+      const positionY = options.position === 'top' ? 50 :
+                       options.position === 'center' ? '(h-text_h)/2' :
                        'h-text_h-50';
 
-      ffmpeg(inputVideoPath)
+      const command = ffmpeg(inputVideoPath)
         .videoFilters([
           {
             filter: 'subtitles',
@@ -234,30 +238,35 @@ const generateVideoWithCaptions = async (req, res) => {
             }
           }
         ])
-        .output(outputVideoPath)
-        .on('end', resolve)
-        .on('error', reject)
-        .run();
-    });
+        .format('mp4')
+        .outputOptions([
+          '-movflags', 'frag_keyframe+empty_moov' // enable progressive streaming
+        ])
+        .on('start', () => {
+          // Flush headers early to start the download
+          if (res.flushHeaders) res.flushHeaders();
+        })
+        .on('error', (err) => {
+          reject(err);
+        })
+        .on('end', () => {
+          resolve();
+        });
 
-    // Read the output video
-    const outputBuffer = fs.readFileSync(outputVideoPath);
+      // Pipe ffmpeg output directly to response
+      const stream = command.pipe();
+      stream.on('error', (err) => {
+        reject(err);
+      });
+      stream.pipe(res, { end: true });
+    });
 
     // Clean up temp files
-    [inputVideoPath, outputVideoPath, subtitlePath].forEach(file => {
+    [inputVideoPath, subtitlePath].forEach(file => {
       if (fs.existsSync(file)) {
-        fs.unlinkSync(file);
+        try { fs.unlinkSync(file); } catch (_) {}
       }
     });
-
-    // Send the video with captions as response
-    res.set({
-      'Content-Type': 'video/mp4',
-      'Content-Disposition': 'attachment; filename="video_with_captions.mp4"',
-      'Content-Length': outputBuffer.length
-    });
-    
-    res.send(outputBuffer);
 
   } catch (error) {
     console.error('Video caption generation error:', error);

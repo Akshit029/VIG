@@ -71,7 +71,10 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-}); 
+});
 
+// Increase server timeout to accommodate long-running video processing
+// Note: Upstream proxy timeouts (e.g., Render) may still apply
+server.setTimeout(0); // Disable Node's default 2-minute timeout
